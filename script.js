@@ -93,16 +93,69 @@ class MinesweeperGame {
 
   handleFirstClick(event) {
     const { row, col } = this.getSquareCoordinates(event.target);
+
+    // Generate mines, but do not interfere with the first click
     this.generateMines(row, col);
 
     const squares = document.querySelectorAll('.square');
+    
+    // Set up event listeners for subsequent clicks and double-clicks
     squares.forEach(square => {
-      square.removeEventListener('click', this.handleFirstClick.bind(this));
-      square.addEventListener('click', this.handleLeftClick.bind(this));
+        square.removeEventListener('click', this.handleFirstClick.bind(this));
+        square.addEventListener('click', this.handleLeftClick.bind(this)); // regular click listener
+        square.addEventListener('dblclick', this.handleDoubleClick.bind(this)); // enable double-click
     });
 
+    // Handle the first click itself
     this.handleLeftClick(event);
   }
+
+  handleDoubleClick(event) {
+    const { row, col } = this.getSquareCoordinates(event.target);
+
+    // Ensure the tile is revealed and contains a number (a 1, 2, 3, etc.)
+    if (!this.revealed[row][col] || !event.target.dataset.number) return;
+
+    // Count how many flags are around the number
+    const flaggedCount = this.countFlagsAround(row, col);
+    const number = parseInt(event.target.dataset.number, 10);
+
+    // If the flagged count matches the number, reveal adjacent unflagged tiles
+    if (flaggedCount === number) {
+        this.revealAdjacentUnflagged(row, col);
+    }
+  }
+
+  revealAdjacentUnflagged(row, col) {
+    for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+            const r = row + i, c = col + j;
+
+            // Only reveal valid, unflagged, and unrevealed tiles
+            if (this.isValidSquare(r, c) && !this.revealed[r][c] && !this.flagged[r][c]) {
+                const square = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                square.click(); // Trigger the normal reveal logic
+            }
+        }
+    }
+  }
+
+  countFlagsAround(row, col) {
+    let count = 0;
+    for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+            const r = row + i, c = col + j;
+            if (this.isValidSquare(r, c) && this.flagged[r][c]) {
+                count++;
+            }
+        }
+    }
+    return count;
+  }
+
+
+
+
 
   generateMines(firstRow, firstCol) {
     const exclusions = new Set();
@@ -129,7 +182,8 @@ class MinesweeperGame {
 
   handleLeftClick(event) {
     const { row, col } = this.getSquareCoordinates(event.target);
-    
+
+    // Skip if already revealed or flagged
     if (this.revealed[row][col] || this.flagged[row][col]) return;
 
     this.revealSquare(row, col, event.target);
@@ -140,22 +194,24 @@ class MinesweeperGame {
     squareElement.classList.add('revealed');
 
     if (this.isMine(row, col)) {
-      this.handleGameOver();
-      return;
+        this.handleGameOver();
+        return;
     }
 
     const adjacentMines = this.countAdjacentMines(row, col);
     if (adjacentMines > 0) {
-      squareElement.textContent = adjacentMines;
-      squareElement.setAttribute('data-number', adjacentMines);
+        squareElement.textContent = adjacentMines;
+        squareElement.setAttribute('data-number', adjacentMines);
     }
 
     if (adjacentMines === 0) {
-      this.revealAdjacentSquares(row, col);
+        this.revealAdjacentSquares(row, col);
     }
 
     this.checkForWin();
   }
+
+
 
   handleRightClick(event) {
     event.preventDefault();
@@ -299,16 +355,39 @@ class MinesweeperGame {
 }
 
 // Game Initialization and Event Listeners
-let game = new MinesweeperGame();
+window.addEventListener('load', () => {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      let game = new MinesweeperGame();
 
-DOM.boardSizeSelect.addEventListener('change', function () {
-  const selectedSize = parseInt(this.value, 10);
-  game = new MinesweeperGame(selectedSize);
+      DOM.boardSizeSelect.addEventListener('change', function () {
+        const selectedSize = parseInt(this.value, 10);
+        game = new MinesweeperGame(selectedSize);
+      });
+
+      window.addEventListener('resize', () => {
+        game.adjustGridStyle();
+      });
+
+      // Initial setup
+      DOM.boardSizeSelect.value = '8';
+    });
+  } else {
+    // Fallback for browsers that don't support requestIdleCallback
+    setTimeout(() => {
+      let game = new MinesweeperGame();
+
+      DOM.boardSizeSelect.addEventListener('change', function () {
+        const selectedSize = parseInt(this.value, 10);
+        game = new MinesweeperGame(selectedSize);
+      });
+
+      window.addEventListener('resize', () => {
+        game.adjustGridStyle();
+      });
+
+      // Initial setup
+      DOM.boardSizeSelect.value = '8';
+    }, 50);
+  }
 });
-
-window.addEventListener('resize', () => {
-  game.adjustGridStyle();
-});
-
-// Initial setup
-DOM.boardSizeSelect.value = '8';

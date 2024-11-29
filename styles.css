@@ -96,6 +96,8 @@ body {
 
 .square.revealed[data-number] {
   font-size: 1.4em;
+  cursor: default;
+  user-select: none;
 }
 
 #mine-info {
