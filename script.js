@@ -1,5 +1,6 @@
 const minefield = document.getElementById('minefield');
 const boardSizeSelect = document.getElementById('board-size');
+const remainingMinesDisplay = document.getElementById('remaining-mines');
 let gridSize = 8; // Default to 8x8 grid
 let minePositions = []; // Store positions of mines
 let revealed = []; // Track revealed squares
@@ -116,28 +117,27 @@ function handleLeftClick(event) {
   
 
 function handleRightClick(event) {
-    event.preventDefault(); // Prevent the default right-click menu
-  
-    const row = parseInt(event.target.dataset.row);
-    const col = parseInt(event.target.dataset.col);
-  
-    // Ignore if already revealed
-    if (revealed[row][col]) return;
-  
-    // Toggle flag state
-    if (flagged[row][col]) {
-      // Remove the flag
-      flagged[row][col] = false;
-      event.target.innerHTML = ''; // Ensure the flag is removed
-  
-      // Optionally, you can also remove any other visual indicator
-      event.target.classList.remove('flagged'); // If you've added a 'flagged' class
-    } else {
-      // Place a flag
-      flagged[row][col] = true;
-      event.target.innerHTML = '<div class="flag">🚩</div>'; // Add the flag icon
-    }
+  event.preventDefault(); // Prevent the default right-click menu
+
+  const row = parseInt(event.target.dataset.row);
+  const col = parseInt(event.target.dataset.col);
+
+  // Ignore if already revealed
+  if (revealed[row][col]) return;
+
+  // Toggle flag state
+  if (flagged[row][col]) {
+    flagged[row][col] = false;
+    event.target.innerHTML = ''; // Remove the flag
+  } else {
+    flagged[row][col] = true;
+    event.target.innerHTML = '<div class="flag">🚩</div>'; // Add a red flag icon
   }
+
+  // Update remaining mines
+  updateRemainingMines();
+}
+
   
 
 // Count the number of adjacent mines
@@ -178,8 +178,16 @@ function revealAdjacentSquares(row, col) {
   }
 }
 
+function updateRemainingMines() {
+  const flaggedCount = flagged.flat().filter(f => f).length; // Count flagged squares
+  const remainingMines = mineCount - flaggedCount; // Remaining mines
+  remainingMinesDisplay.textContent = remainingMines;
+}
+
+
 // Initialize the minefield with the default size (8x8)
 createMinefield(8);
+updateRemainingMines(); // Set the initial value for the remaining mines
 
 // Ensure the dropdown is set to 8x8 when the page loads or is refreshed
 window.addEventListener('load', () => {

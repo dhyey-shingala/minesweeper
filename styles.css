@@ -113,3 +113,15 @@ body {
 .square.revealed[data-number] {
   font-size: 1.4em; /* Increase the font size of numbers in revealed squares */
 }
+
+#mine-info {
+  display: flex;
+  align-items: center;
+  margin: 10px;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.flag-icon {
+  margin-right: 5px;
+}
